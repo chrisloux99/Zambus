@@ -35,6 +35,15 @@ interface Route {
   status: string;
 }
 
+interface RouteFormData {
+  origin: string;
+  destination: string;
+  distance: string;
+  duration: string;
+  stops: string[];
+  fare: string;
+}
+
 export default function CompanyRoutesPage() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
@@ -63,7 +72,7 @@ export default function CompanyRoutesPage() {
 
   const [editingRoute, setEditingRoute] = useState<Route | null>(null);
 
-  const validateRoute = (formData: FormData): Omit<Route, 'id'> => {
+  const validateRoute = (formData: FormData): RouteFormData => {
     const origin = formData.get('origin') as string;
     const destination = formData.get('destination') as string;
     const distance = formData.get('distance') as string;
@@ -76,21 +85,30 @@ export default function CompanyRoutesPage() {
     }
 
     // Validate numeric fields
-    if (isNaN(Number(distance)) || isNaN(Number(duration)) || isNaN(Number(fare))) {
+    const distanceNum = Number(distance);
+    const durationNum = Number(duration);
+    const fareNum = Number(fare);
+
+    if (isNaN(distanceNum) || isNaN(durationNum) || isNaN(fareNum)) {
       throw new Error('Distance, duration, and fare must be valid numbers');
     }
 
-    // Convert stops string to array
-    const stops = stopsString.split(',').map(stop => stop.trim()).filter(Boolean);
+    if (distanceNum <= 0 || durationNum <= 0 || fareNum <= 0) {
+      throw new Error('Distance, duration, and fare must be positive numbers');
+    }
+
+    // Convert stops string to array and filter out empty values
+    const stops = stopsString.split(',')
+      .map(stop => stop.trim())
+      .filter(Boolean);
 
     return {
-      origin,
-      destination,
-      distance,
-      duration,
+      origin: origin.trim(),
+      destination: destination.trim(),
+      distance: String(distanceNum),
+      duration: String(durationNum),
       stops,
-      fare,
-      status: 'Active'
+      fare: String(fareNum)
     };
   };
 
@@ -117,7 +135,8 @@ export default function CompanyRoutesPage() {
 
       const newRoute: Route = {
         ...validatedData,
-        id: Math.floor(Math.random() * 10000)
+        id: Math.floor(Math.random() * 10000),
+        status: 'Active'
       };
 
       setRoutes((prevRoutes: Route[]) => [...prevRoutes, newRoute]);
@@ -169,7 +188,7 @@ export default function CompanyRoutesPage() {
 
       setRoutes((prevRoutes: Route[]) => prevRoutes.map(route => 
         route.id === editingRoute.id 
-          ? { ...route, ...validatedData }
+          ? { ...route, ...validatedData, status: editingRoute.status }
           : route
       ));
 
