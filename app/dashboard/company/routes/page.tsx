@@ -44,32 +44,33 @@ interface RouteFormData {
   fare: string;
 }
 
+const DEFAULT_ROUTES: Route[] = [
+  {
+    id: 1,
+    origin: "Lusaka",
+    destination: "Livingstone",
+    distance: "472",
+    duration: "6",
+    stops: ["Kafue", "Mazabuka", "Monze", "Choma", "Kalomo"],
+    fare: "250",
+    status: "Active"
+  },
+  {
+    id: 2,
+    origin: "Lusaka",
+    destination: "Ndola",
+    distance: "321",
+    duration: "4",
+    stops: ["Kabwe", "Kapiri Mposhi", "Serenje"],
+    fare: "200",
+    status: "Active"
+  }
+];
+
 export default function CompanyRoutesPage() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  const [routes, setRoutes] = useState<Route[]>([
-    {
-      id: 1,
-      origin: "Lusaka",
-      destination: "Livingstone",
-      distance: "472",
-      duration: "6",
-      stops: ["Kafue", "Mazabuka", "Monze", "Choma", "Kalomo"],
-      fare: "250",
-      status: "Active"
-    },
-    {
-      id: 2,
-      origin: "Lusaka",
-      destination: "Ndola",
-      distance: "321",
-      duration: "4",
-      stops: ["Kabwe", "Kapiri Mposhi", "Serenje"],
-      fare: "200",
-      status: "Active"
-    }
-  ]);
-
+  const [routes, setRoutes] = useState<Route[]>(DEFAULT_ROUTES);
   const [editingRoute, setEditingRoute] = useState<Route | null>(null);
 
   const validateRoute = (formData: FormData): RouteFormData => {
@@ -109,10 +110,10 @@ export default function CompanyRoutesPage() {
     return {
       origin: origin.trim(),
       destination: destination.trim(),
-      distance: distance,
-      duration: duration,
+      distance,
+      duration,
       stops,
-      fare: fare
+      fare
     };
   };
 
@@ -137,7 +138,7 @@ export default function CompanyRoutesPage() {
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1000));
 
-      const newRoute: Route = {
+      const newRoute = {
         id: Math.floor(Math.random() * 10000),
         origin: validatedData.origin,
         destination: validatedData.destination,
@@ -145,10 +146,10 @@ export default function CompanyRoutesPage() {
         duration: validatedData.duration,
         stops: validatedData.stops,
         fare: validatedData.fare,
-        status: 'Active'
-      };
+        status: 'Active' as const
+      } satisfies Route;
 
-      setRoutes(prevRoutes => [...prevRoutes, newRoute]);
+      setRoutes(prevRoutes => [...prevRoutes, newRoute] as Route[]);
       toast({
         title: "Route added",
         description: "New route has been added successfully.",
@@ -198,20 +199,19 @@ export default function CompanyRoutesPage() {
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1000));
 
-      const updatedRoute: Route = {
+      const updatedRoute = {
         ...editingRoute,
         origin: validatedData.origin,
         destination: validatedData.destination,
         distance: validatedData.distance,
         duration: validatedData.duration,
         stops: validatedData.stops,
-        fare: validatedData.fare,
-      };
+        fare: validatedData.fare
+      } satisfies Route;
 
       setRoutes(prevRoutes => prevRoutes.map(route => 
         route.id === editingRoute.id ? updatedRoute : route
-      ));
-
+      ) as Route[]);
       toast({
         title: "Route updated",
         description: "Route has been updated successfully.",
