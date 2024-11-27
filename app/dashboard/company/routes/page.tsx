@@ -35,36 +35,63 @@ interface Route {
   status: string;
 }
 
-interface RouteFormData {
-  origin: string;
-  destination: string;
-  distance: string;
-  duration: string;
-  stops: string[];
-  fare: string;
-}
+type RouteStatus = 'Active' | 'Inactive';
+
+const isValidRoute = (route: any): route is Route => {
+  return (
+    typeof route.id === 'number' &&
+    typeof route.origin === 'string' &&
+    typeof route.destination === 'string' &&
+    typeof route.distance === 'string' &&
+    typeof route.duration === 'string' &&
+    Array.isArray(route.stops) &&
+    route.stops.every((stop: any) => typeof stop === 'string') &&
+    typeof route.fare === 'string' &&
+    typeof route.status === 'string'
+  );
+};
+
+const createRoute = (
+  id: number,
+  origin: string,
+  destination: string,
+  distance: string,
+  duration: string,
+  stops: string[],
+  fare: string,
+  status: RouteStatus
+): Route => ({
+  id,
+  origin,
+  destination,
+  distance,
+  duration,
+  stops,
+  fare,
+  status
+});
 
 const DEFAULT_ROUTES: Route[] = [
-  {
-    id: 1,
-    origin: "Lusaka",
-    destination: "Livingstone",
-    distance: "472",
-    duration: "6",
-    stops: ["Kafue", "Mazabuka", "Monze", "Choma", "Kalomo"],
-    fare: "250",
-    status: "Active"
-  },
-  {
-    id: 2,
-    origin: "Lusaka",
-    destination: "Ndola",
-    distance: "321",
-    duration: "4",
-    stops: ["Kabwe", "Kapiri Mposhi", "Serenje"],
-    fare: "200",
-    status: "Active"
-  }
+  createRoute(
+    1,
+    "Lusaka",
+    "Livingstone",
+    "472",
+    "6",
+    ["Kafue", "Mazabuka", "Monze", "Choma", "Kalomo"],
+    "250",
+    "Active"
+  ),
+  createRoute(
+    2,
+    "Lusaka",
+    "Ndola",
+    "321",
+    "4",
+    ["Kabwe", "Kapiri Mposhi", "Serenje"],
+    "200",
+    "Active"
+  )
 ];
 
 export default function CompanyRoutesPage() {
@@ -73,16 +100,27 @@ export default function CompanyRoutesPage() {
   const [routes, setRoutes] = useState<Route[]>(DEFAULT_ROUTES);
   const [editingRoute, setEditingRoute] = useState<Route | null>(null);
 
-  const validateRoute = (formData: FormData): RouteFormData => {
-    const origin = formData.get('origin') as string;
-    const destination = formData.get('destination') as string;
-    const distance = formData.get('distance') as string;
-    const duration = formData.get('duration') as string;
-    const stopsString = formData.get('stops') as string;
-    const fare = formData.get('fare') as string;
+  const validateFormData = (formData: FormData) => {
+    const origin = formData.get('origin');
+    const destination = formData.get('destination');
+    const distance = formData.get('distance');
+    const duration = formData.get('duration');
+    const stopsString = formData.get('stops');
+    const fare = formData.get('fare');
 
     if (!origin || !destination || !distance || !duration || !stopsString || !fare) {
       throw new Error('All fields are required');
+    }
+
+    if (
+      typeof origin !== 'string' ||
+      typeof destination !== 'string' ||
+      typeof distance !== 'string' ||
+      typeof duration !== 'string' ||
+      typeof stopsString !== 'string' ||
+      typeof fare !== 'string'
+    ) {
+      throw new Error('Invalid form data types');
     }
 
     // Validate numeric fields
@@ -123,7 +161,7 @@ export default function CompanyRoutesPage() {
 
     try {
       const formData = new FormData(e.currentTarget);
-      const validatedData = validateRoute(formData);
+      const validatedData = validateFormData(formData);
 
       // Check for duplicate routes
       const isDuplicate = routes.some(route => 
@@ -138,36 +176,33 @@ export default function CompanyRoutesPage() {
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1000));
 
-      const newRoute = {
-        id: Math.floor(Math.random() * 10000),
-        origin: validatedData.origin,
-        destination: validatedData.destination,
-        distance: validatedData.distance,
-        duration: validatedData.duration,
-        stops: validatedData.stops,
-        fare: validatedData.fare,
-        status: 'Active' as const
-      } satisfies Route;
+      const newRoute = createRoute(
+        Math.floor(Math.random() * 10000),
+        validatedData.origin,
+        validatedData.destination,
+        validatedData.distance,
+        validatedData.duration,
+        validatedData.stops,
+        validatedData.fare,
+        'Active'
+      );
 
-      setRoutes(prevRoutes => [...prevRoutes, newRoute] as Route[]);
+      if (!isValidRoute(newRoute)) {
+        throw new Error('Invalid route data');
+      }
+
+      setRoutes(prevRoutes => [...prevRoutes, newRoute]);
+
       toast({
         title: "Route added",
         description: "New route has been added successfully.",
       });
-
-      // Reset form (you'll need to implement this)
-      // formRef.current?.reset();
     } catch (error) {
-      const errorMessage = error instanceof Error 
-        ? error.message 
-        : "An unexpected error occurred while adding the route.";
-      
       toast({
-        title: "Failed to add route",
-        description: errorMessage,
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to add route",
         variant: "destructive",
       });
-      console.error("Add route error:", error);
     } finally {
       setIsLoading(false);
     }
@@ -183,7 +218,7 @@ export default function CompanyRoutesPage() {
       }
 
       const formData = new FormData(e.currentTarget);
-      const validatedData = validateRoute(formData);
+      const validatedData = validateFormData(formData);
 
       // Check for duplicate routes (excluding the current route)
       const isDuplicate = routes.some(route => 
@@ -199,36 +234,32 @@ export default function CompanyRoutesPage() {
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1000));
 
-      const updatedRoute = {
-        ...editingRoute,
-        origin: validatedData.origin,
-        destination: validatedData.destination,
-        distance: validatedData.distance,
-        duration: validatedData.duration,
-        stops: validatedData.stops,
-        fare: validatedData.fare
-      } satisfies Route;
+      const updatedRoute = createRoute(
+        editingRoute.id,
+        validatedData.origin,
+        validatedData.destination,
+        validatedData.distance,
+        validatedData.duration,
+        validatedData.stops,
+        validatedData.fare,
+        editingRoute.status as RouteStatus
+      );
+
+      if (!isValidRoute(updatedRoute)) {
+        throw new Error('Invalid route data');
+      }
 
       setRoutes(prevRoutes => prevRoutes.map(route => 
         route.id === editingRoute.id ? updatedRoute : route
-      ) as Route[]);
-      toast({
-        title: "Route updated",
-        description: "Route has been updated successfully.",
-      });
+      ));
 
       setEditingRoute(null);
     } catch (error) {
-      const errorMessage = error instanceof Error 
-        ? error.message 
-        : "An unexpected error occurred while updating the route.";
-      
       toast({
-        title: "Failed to update route",
-        description: errorMessage,
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to update route",
         variant: "destructive",
       });
-      console.error("Edit route error:", error);
     } finally {
       setIsLoading(false);
     }
@@ -252,21 +283,17 @@ export default function CompanyRoutesPage() {
       await new Promise(resolve => setTimeout(resolve, 1000));
 
       setRoutes(prevRoutes => prevRoutes.filter(route => route.id !== routeId));
+
       toast({
         title: "Route deleted",
         description: "Route has been deleted successfully.",
       });
     } catch (error) {
-      const errorMessage = error instanceof Error 
-        ? error.message 
-        : "An unexpected error occurred while deleting the route.";
-      
       toast({
-        title: "Failed to delete route",
-        description: errorMessage,
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to delete route",
         variant: "destructive",
       });
-      console.error("Delete route error:", error);
     }
   };
 
@@ -289,16 +316,11 @@ export default function CompanyRoutesPage() {
         description: `Route status has been updated to ${newStatus}.`,
       });
     } catch (error) {
-      const errorMessage = error instanceof Error 
-        ? error.message 
-        : "An unexpected error occurred while updating the route status.";
-      
       toast({
-        title: "Failed to update status",
-        description: errorMessage,
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to update route status",
         variant: "destructive",
       });
-      console.error("Update route status error:", error);
     }
   };
 
