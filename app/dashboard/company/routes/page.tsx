@@ -24,94 +24,69 @@ import {
 import { Plus, Edit, Trash } from "lucide-react";
 import { DropdownMenu, DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 
+interface Route {
+  id: number;
+  origin: string;
+  destination: string;
+  distance: string;
+  duration: string;
+  stops: string[];
+  fare: string;
+  status: string;
+}
+
 export default function CompanyRoutesPage() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  const [routes, setRoutes] = useState([
+  const [routes, setRoutes] = useState<Route[]>([
     {
       id: 1,
       origin: "Lusaka",
       destination: "Livingstone",
       distance: "472",
       duration: "6",
-      stops: ["Kafue", "Mazabuka", "Choma"],
+      stops: ["Kafue", "Mazabuka", "Monze", "Choma", "Kalomo"],
       fare: "250",
       status: "Active",
     },
     {
       id: 2,
       origin: "Lusaka",
-      destination: "Kitwe",
-      distance: "358",
-      duration: "4.5",
-      stops: ["Kabwe", "Kapiri Mposhi", "Ndola"],
+      destination: "Ndola",
+      distance: "321",
+      duration: "4",
+      stops: ["Kabwe", "Kapiri Mposhi", "Serenje"],
       fare: "200",
       status: "Active",
     },
   ]);
 
-  const [editingRoute, setEditingRoute] = useState<typeof routes[0] | null>(null);
+  const [editingRoute, setEditingRoute] = useState<Route | null>(null);
 
-  const validateRoute = (formData: FormData) => {
+  const validateRoute = (formData: FormData): Route => {
     const origin = formData.get('origin') as string;
     const destination = formData.get('destination') as string;
-    const distance = formData.get('distance') as string;
-    const duration = formData.get('duration') as string;
-    const stops = formData.get('stops') as string;
-    const fare = formData.get('fare') as string;
+    const distance = String(formData.get('distance'));
+    const duration = String(formData.get('duration'));
+    const stopsString = formData.get('stops') as string;
+    const fare = String(formData.get('fare'));
 
-    if (!origin || !destination || !distance || !duration || !fare) {
-      throw new Error('All fields except stops are required');
+    if (!origin || !destination || !distance || !duration || !stopsString || !fare) {
+      throw new Error('All fields are required');
     }
 
-    // Validate origin and destination are different
-    if (origin.toLowerCase() === destination.toLowerCase()) {
-      throw new Error('Origin and destination must be different');
-    }
-
-    // Validate distance
-    const distanceNum = parseFloat(distance);
-    if (isNaN(distanceNum) || distanceNum <= 0) {
-      throw new Error('Distance must be a positive number');
-    }
-
-    // Validate duration
-    const durationNum = parseFloat(duration);
-    if (isNaN(durationNum) || durationNum <= 0) {
-      throw new Error('Duration must be a positive number');
-    }
-
-    // Validate fare
-    const fareNum = parseFloat(fare);
-    if (isNaN(fareNum) || fareNum <= 0) {
-      throw new Error('Fare must be a positive number');
-    }
-
-    // Validate and process stops
-    const stopsList = stops ? stops.split(',').map(stop => stop.trim()).filter(Boolean) : [];
-    
-    // Check if stops are unique
-    const uniqueStops = new Set(stopsList);
-    if (uniqueStops.size !== stopsList.length) {
-      throw new Error('Each stop must be unique');
-    }
-
-    // Check if any stop is same as origin or destination
-    if (stopsList.some(stop => 
-      stop.toLowerCase() === origin.toLowerCase() || 
-      stop.toLowerCase() === destination.toLowerCase()
-    )) {
-      throw new Error('Stops cannot include origin or destination');
-    }
+    // Convert stops string to array
+    const stops = stopsString.split(',').map(stop => stop.trim());
 
     return {
+      id: 0, // This will be set later
       origin,
       destination,
-      distance: distanceNum,
-      duration: durationNum,
-      stops: stopsList,
-      fare: fareNum,
-      status: "Active"
+      distance,
+      duration,
+      stops,
+      fare,
+      status: 'Active'
     };
   };
 
@@ -136,9 +111,9 @@ export default function CompanyRoutesPage() {
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1000));
 
-      const newRoute = {
-        id: Math.random(),
-        ...validatedData
+      const newRoute: Route = {
+        ...validatedData,
+        id: Math.floor(Math.random() * 10000)
       };
 
       setRoutes(prev => [...prev, newRoute]);
