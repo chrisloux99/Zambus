@@ -102,13 +102,17 @@ export default function CompanyRoutesPage() {
       .map(stop => stop.trim())
       .filter(Boolean);
 
+    if (stops.length === 0) {
+      throw new Error('At least one stop is required');
+    }
+
     return {
       origin: origin.trim(),
       destination: destination.trim(),
-      distance: String(distanceNum),
-      duration: String(durationNum),
+      distance: distance,
+      duration: duration,
       stops,
-      fare: String(fareNum)
+      fare: fare
     };
   };
 
@@ -195,14 +199,13 @@ export default function CompanyRoutesPage() {
       await new Promise(resolve => setTimeout(resolve, 1000));
 
       const updatedRoute: Route = {
-        id: editingRoute.id,
+        ...editingRoute,
         origin: validatedData.origin,
         destination: validatedData.destination,
         distance: validatedData.distance,
         duration: validatedData.duration,
         stops: validatedData.stops,
         fare: validatedData.fare,
-        status: editingRoute.status
       };
 
       setRoutes(prevRoutes => prevRoutes.map(route => 
