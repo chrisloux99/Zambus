@@ -134,12 +134,17 @@ export default function CompanyRoutesPage() {
       await new Promise(resolve => setTimeout(resolve, 1000));
 
       const newRoute: Route = {
-        ...validatedData,
         id: Math.floor(Math.random() * 10000),
+        origin: validatedData.origin,
+        destination: validatedData.destination,
+        distance: validatedData.distance,
+        duration: validatedData.duration,
+        stops: validatedData.stops,
+        fare: validatedData.fare,
         status: 'Active'
       };
 
-      setRoutes((prevRoutes: Route[]) => [...prevRoutes, newRoute]);
+      setRoutes(prevRoutes => [...prevRoutes, newRoute]);
       toast({
         title: "Route added",
         description: "New route has been added successfully.",
@@ -165,10 +170,13 @@ export default function CompanyRoutesPage() {
 
   const handleEditRoute = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!editingRoute) return;
     setIsLoading(true);
 
     try {
+      if (!editingRoute) {
+        throw new Error('No route selected for editing');
+      }
+
       const formData = new FormData(e.currentTarget);
       const validatedData = validateRoute(formData);
 
@@ -186,10 +194,19 @@ export default function CompanyRoutesPage() {
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1000));
 
-      setRoutes((prevRoutes: Route[]) => prevRoutes.map(route => 
-        route.id === editingRoute.id 
-          ? { ...route, ...validatedData, status: editingRoute.status }
-          : route
+      const updatedRoute: Route = {
+        id: editingRoute.id,
+        origin: validatedData.origin,
+        destination: validatedData.destination,
+        distance: validatedData.distance,
+        duration: validatedData.duration,
+        stops: validatedData.stops,
+        fare: validatedData.fare,
+        status: editingRoute.status
+      };
+
+      setRoutes(prevRoutes => prevRoutes.map(route => 
+        route.id === editingRoute.id ? updatedRoute : route
       ));
 
       toast({
@@ -231,7 +248,7 @@ export default function CompanyRoutesPage() {
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1000));
 
-      setRoutes((prevRoutes: Route[]) => prevRoutes.filter(route => route.id !== routeId));
+      setRoutes(prevRoutes => prevRoutes.filter(route => route.id !== routeId));
       toast({
         title: "Route deleted",
         description: "Route has been deleted successfully.",
@@ -260,7 +277,7 @@ export default function CompanyRoutesPage() {
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1000));
 
-      setRoutes((prevRoutes: Route[]) => prevRoutes.map(route => 
+      setRoutes(prevRoutes => prevRoutes.map(route => 
         route.id === routeId ? { ...route, status: newStatus } : route
       ));
 
