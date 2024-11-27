@@ -1,0 +1,50 @@
+# DNS Configuration for zambus.com
+
+# A Records
+# Main domain
+Type: A
+Host: @
+Value: 162.210.102.231
+TTL: 3600
+
+# SSL
+Type: A
+Host: @
+Value: 162.210.101.174
+TTL: 3600
+
+# WWW subdomain
+Type: A
+Host: www
+Value: 162.210.102.231
+TTL: 3600
+
+# CNAME Records
+# WWW redirect
+Type: CNAME
+Host: www
+Value: zambus.com
+TTL: 3600
+
+# TXT Records
+# SPF Record (Email security)
+Type: TXT
+Host: @
+Value: "v=spf1 include:_spf.zambus.com ~all"
+TTL: 3600
+
+# Security Headers
+Type: TXT
+Host: _security
+Value: "v=security; mode=strict"
+TTL: 3600
+
+# Additional recommended settings:
+# 1. Enable DNSSEC if supported by your registrar
+# 2. Set up MX records if you plan to use email
+# 3. Consider adding CAA records for additional SSL security
+
+# Important Notes:
+# - Allow 24-48 hours for DNS propagation
+# - Keep SSL certificates up to date
+# - Monitor DNS health regularly
