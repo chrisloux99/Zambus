@@ -47,7 +47,7 @@ export default function CompanyRoutesPage() {
       duration: "6",
       stops: ["Kafue", "Mazabuka", "Monze", "Choma", "Kalomo"],
       fare: "250",
-      status: "Active",
+      status: "Active"
     },
     {
       id: 2,
@@ -57,29 +57,33 @@ export default function CompanyRoutesPage() {
       duration: "4",
       stops: ["Kabwe", "Kapiri Mposhi", "Serenje"],
       fare: "200",
-      status: "Active",
-    },
+      status: "Active"
+    }
   ]);
 
   const [editingRoute, setEditingRoute] = useState<Route | null>(null);
 
-  const validateRoute = (formData: FormData): Route => {
+  const validateRoute = (formData: FormData): Omit<Route, 'id'> => {
     const origin = formData.get('origin') as string;
     const destination = formData.get('destination') as string;
-    const distance = String(formData.get('distance'));
-    const duration = String(formData.get('duration'));
+    const distance = formData.get('distance') as string;
+    const duration = formData.get('duration') as string;
     const stopsString = formData.get('stops') as string;
-    const fare = String(formData.get('fare'));
+    const fare = formData.get('fare') as string;
 
     if (!origin || !destination || !distance || !duration || !stopsString || !fare) {
       throw new Error('All fields are required');
     }
 
+    // Validate numeric fields
+    if (isNaN(Number(distance)) || isNaN(Number(duration)) || isNaN(Number(fare))) {
+      throw new Error('Distance, duration, and fare must be valid numbers');
+    }
+
     // Convert stops string to array
-    const stops = stopsString.split(',').map(stop => stop.trim());
+    const stops = stopsString.split(',').map(stop => stop.trim()).filter(Boolean);
 
     return {
-      id: 0, // This will be set later
       origin,
       destination,
       distance,
@@ -116,7 +120,7 @@ export default function CompanyRoutesPage() {
         id: Math.floor(Math.random() * 10000)
       };
 
-      setRoutes(prev => [...prev, newRoute]);
+      setRoutes((prevRoutes: Route[]) => [...prevRoutes, newRoute]);
       toast({
         title: "Route added",
         description: "New route has been added successfully.",
@@ -163,7 +167,7 @@ export default function CompanyRoutesPage() {
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1000));
 
-      setRoutes(prev => prev.map(route => 
+      setRoutes((prevRoutes: Route[]) => prevRoutes.map(route => 
         route.id === editingRoute.id 
           ? { ...route, ...validatedData }
           : route
@@ -208,7 +212,7 @@ export default function CompanyRoutesPage() {
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1000));
 
-      setRoutes(prev => prev.filter(route => route.id !== routeId));
+      setRoutes((prevRoutes: Route[]) => prevRoutes.filter(route => route.id !== routeId));
       toast({
         title: "Route deleted",
         description: "Route has been deleted successfully.",
@@ -237,7 +241,7 @@ export default function CompanyRoutesPage() {
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1000));
 
-      setRoutes(prev => prev.map(route => 
+      setRoutes((prevRoutes: Route[]) => prevRoutes.map(route => 
         route.id === routeId ? { ...route, status: newStatus } : route
       ));
 
